@@ -18,6 +18,8 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 ACoyoteTimeCharacter::ACoyoteTimeCharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
@@ -78,7 +80,7 @@ void ACoyoteTimeCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInpu
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 		
 		// Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACoyoteTimeCharacter::CoyoteJump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		// Moving
@@ -127,4 +129,56 @@ void ACoyoteTimeCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void ACoyoteTimeCharacter::CoyoteJump()
+{
+	if (GetCharacterMovement()->IsMovingOnGround() || bCanUseCoyoteTime)
+	{
+		// Reset coyote time
+		bCanUseCoyoteTime = false;
+		TimeSinceLeftGround = 0.0f;
+
+		// Perform the jump
+		LaunchCharacter(FVector(0.0f, 0.0f, GetCharacterMovement()->JumpZVelocity), false, true);
+	}
+}
+
+void ACoyoteTimeCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+
+	// Reset coyote time variables
+	TimeSinceLeftGround = 0.0f;
+	bCanUseCoyoteTime = false;
+}
+
+void ACoyoteTimeCharacter::UpdateCoyoteTime(float DeltaTime)
+{
+	if (!GetCharacterMovement()->IsMovingOnGround())
+	{
+		TimeSinceLeftGround += DeltaTime;
+
+		if (TimeSinceLeftGround <= CoyoteTimeDuration)
+		{
+			bCanUseCoyoteTime = true;
+		}
+		else
+		{
+			bCanUseCoyoteTime = false;
+		}
+	}
+	else
+	{
+		// Player is on the ground, reset variables
+		TimeSinceLeftGround = 0.0f;
+		bCanUseCoyoteTime = false;
+	}
+}
+
+void ACoyoteTimeCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	UpdateCoyoteTime(DeltaTime);
 }

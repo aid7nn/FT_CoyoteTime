@@ -46,6 +46,18 @@ class ACoyoteTimeCharacter : public ACharacter
 
 public:
 	ACoyoteTimeCharacter();
+	// New jump function for Coyote time
+	void CoyoteJump();
+	void Landed(const FHitResult& Hit) override;
+	void Tick(float DeltaTime) override;
+	// function to update and track our Coyote Time Window
+	void UpdateCoyoteTime(float DeltaTime);
+
+protected:
+	// track the Coyote time jump
+	float CoyoteTimeDuration = 0.2f; // coyote time jump limit
+	float TimeSinceLeftGround = 0.0f;
+	bool bCanUseCoyoteTime = false;
 
 protected:
 
